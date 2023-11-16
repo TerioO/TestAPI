@@ -42,10 +42,11 @@ interface PaginationQuery {
     page: string,
     limit: string,
     sort: string,
-    select: string
+    select: string,
+    postId: string
 }
 export const getPostsComments: RequestHandler<unknown, unknown, PostsCommentsBody, PaginationQuery> = async (req, res, next) => {
-    const { postId } = req.body;
+    const postId = req.query.postId;
     let limit = parseInt(req.query.limit) > 0 ? parseInt(req.query.limit) : 20;
     let page;
     if(!req.query.page){
@@ -58,7 +59,7 @@ export const getPostsComments: RequestHandler<unknown, unknown, PostsCommentsBod
     const select = req.query.select ? req.query.select : {};
     const sort = req.query.sort ? req.query.sort : undefined;
     try {
-        if(!postId) throw createHttpError(400, "Missing field: postId")
+        if(!postId) throw createHttpError(400, "Missing query param: postId")
         if(!mongoose.isValidObjectId(postId)) throw createHttpError(400, "Invalid postId");
         const comments = await Comment.find({ postId })
             .skip((page-1)*limit)
