@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import createHttpError from "http-errors";
 import Post, { PostInterface } from "../models/Post";
 import User from "../models/User";
-import dayjs from "dayjs";
 
 interface PaginationQuery {
     page: string,
@@ -59,7 +58,9 @@ export const createPost: RequestHandler<unknown, unknown, PostInterface, unknown
     try {
         if(!title || !body || !userId) throw createHttpError(400, "Missing fields: title, body, userId");
         if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
-        if(createdAt && !dayjs(createdAt).isValid()) throw createHttpError(400, "Invalid date string.");
+        if(createdAt && !Date.parse(createdAt.toString())) throw createHttpError(400, "Invalid date string.");
+        const foundUser = await User.findById(userId).lean().exec();
+        if(!foundUser) throw createHttpError(404, "User not found.");
         const post = await Post.create({ userId, title, body, createdAt });
         res.status(201).json({ post });
     }
@@ -93,7 +94,7 @@ export const deletePost: RequestHandler = async (req, res, next) => {
         if(!mongoose.isValidObjectId(postId)) throw createHttpError(400, "Invalid post id.");
         const result = await Post.deleteOne({ _id: postId });
         if(result.deletedCount === 0) throw createHttpError(404, "Post not found.");
-        res.status(200).json({ message: "Post deleted!" });
+        res.status(200).json({ message: `Post with id: ${postId} deleted` });
     }
     catch(error){
         next(error)

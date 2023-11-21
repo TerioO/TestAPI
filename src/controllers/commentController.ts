@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
-import dayjs from "dayjs";
 import Comment from "../models/Comment";
 import User from "../models/User";
 import Post from "../models/Post";
@@ -18,7 +17,7 @@ export const createComment: RequestHandler<unknown, unknown, CreateCommentInterf
         if(!postId || !userId || !body) throw createHttpError(400, "Missing fields: postId, userId, body");
         if(!mongoose.isValidObjectId(postId)) throw createHttpError(400, "Invalid postId")
         if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid userId")
-        if(createdAt && !dayjs(createdAt).isValid()) throw createHttpError(400, "Invalid date format.")
+        if(createdAt && !Date.parse(createdAt.toString())) throw createHttpError(400, "Invalid date format.")
         const foundUser = await User.findById(userId).lean().exec();
         if(!foundUser) throw createHttpError(404, "User not found, cannot create comment.");
         const user = {

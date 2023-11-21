@@ -1,8 +1,10 @@
 import createHttpError from "http-errors"
 import User, { UserInterface } from "../models/User";
+import Post from "../models/Post";
+import Comment from "../models/Comment";
+import Todo from "../models/Todo";
 import mongoose from "mongoose";
 import { RequestHandler } from "express"
-import dayjs from "dayjs";
 
 interface PaginationQuery {
     page: string,
@@ -57,7 +59,7 @@ export const createUser: RequestHandler<unknown, unknown, UserInterface, unknown
     try {
         if(!username) throw createHttpError(400, "Missing field: username");
         Object.entries(dates).forEach(([key, value]) => {
-            if(!dayjs(value).isValid()) throw createHttpError(400, `Invalid date string: ${key}`);
+            if(value && !Date.parse(value?.toString())) throw createHttpError(400, `Invalid date string: ${key}`);
         })
         const duplicate = await User.findOne({ username }).lean().exec();
         if(duplicate) throw createHttpError(400, "Username already taken.");
@@ -82,7 +84,7 @@ export const updateUser: RequestHandler<UpdateParams, unknown, UpdateBody, unkno
     try {
         if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
         if(!username && !birthday) throw createHttpError(400, "Missing field: username or birthday");
-        if(!dayjs(birthday).isValid()) throw createHttpError(400, "Invalid date string: birthday");
+        if(birthday && Date.parse(birthday.toString())) throw createHttpError(400, "Invalid date string: birthday");
         const user = await User.findById(userId).exec();
         if(!user) throw createHttpError(404, "User not found.");
         if(birthday) user.birthday = birthday;
@@ -107,7 +109,10 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
         if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
         const result = await User.deleteOne({ _id: userId });
         if(result.deletedCount === 0) throw createHttpError(404, "User not found.");
-        res.status(200).json({ message: "User deleted" });
+        await Post.deleteMany({ userId });
+        await Todo.deleteMany({ userId });
+        await Comment.deleteMany({ "user.userId": userId });
+        res.status(200).json({ message: "User deleted along with every user data." });
     }
     catch(error){
         next(error)

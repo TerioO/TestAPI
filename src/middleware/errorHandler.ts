@@ -9,7 +9,10 @@ export const errorHandler = async (error: unknown, req: Request, res: Response, 
         statusCode = error.statusCode;
         message = error.message;
     }
-    if(error instanceof Error) console.log(error.message)
+    else if(error instanceof Error) {
+        message = error.message;
+        statusCode = 400;
+    }
     else console.log(error)
     res.status(statusCode).json({ message, isError: true });
 }
