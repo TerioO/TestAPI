@@ -20,13 +20,9 @@ export const createComment: RequestHandler<unknown, unknown, CreateCommentInterf
         if(createdAt && !Date.parse(createdAt.toString())) throw createHttpError(400, "Invalid date format.")
         const foundUser = await User.findById(userId).lean().exec();
         if(!foundUser) throw createHttpError(404, "User not found, cannot create comment.");
-        const user = {
-            userId: foundUser._id,
-            username: foundUser.username
-        }
         const foundPost = await Post.findById(postId).lean().exec();
         if(!foundPost) throw createHttpError(404, "Post not found, cannot create comment.");
-        const comment = await Comment.create({ postId, user, body, createdAt });
+        const comment = await Comment.create({ postId, userId, body, createdAt });
         res.status(201).json({ comment });
     }
     catch(error){

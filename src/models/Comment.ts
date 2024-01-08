@@ -2,10 +2,7 @@ import mongoose from "mongoose"
 
 export interface CommentInterface {
     postId: string,
-    user: {
-        userId: string,
-        username: string
-    },
+    userId: string,
     body: string,
     createdAt?: Date
 }
@@ -15,15 +12,9 @@ const commentSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required: true,
     },
-    user: {
-        userId: {
-            type: mongoose.Types.ObjectId,
-            required: true
-        },
-        username: {
-            type: String,
-            required: true,
-        }
+    userId: {
+        type: mongoose.Types.ObjectId,
+        required: true
     },
     body: {
         type: String,

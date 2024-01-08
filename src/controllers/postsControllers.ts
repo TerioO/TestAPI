@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import createHttpError from "http-errors";
 import Post, { PostInterface } from "../models/Post";
 import User from "../models/User";
+import Comment from "../models/Comment";
 
 interface PaginationQuery {
     page: string,
@@ -46,7 +47,7 @@ export const getPost: RequestHandler = async (req, res, next) => {
         if(!foundPost) throw createHttpError(404, "Post not found.");
         const user = await User.findById(foundPost.userId).lean().select("username").exec();
         if(!user) throw createHttpError(404, "User not found.");
-        res.status(200).json({ user, post: foundPost });
+        res.status(200).json({ post: foundPost });
     }
     catch(error){
         next(error)
@@ -93,8 +94,9 @@ export const deletePost: RequestHandler = async (req, res, next) => {
     try {
         if(!mongoose.isValidObjectId(postId)) throw createHttpError(400, "Invalid post id.");
         const result = await Post.deleteOne({ _id: postId });
+        const deletedComments = await Comment.deleteMany({ postId });
         if(result.deletedCount === 0) throw createHttpError(404, "Post not found.");
-        res.status(200).json({ message: `Post with id: ${postId} deleted` });
+        res.status(200).json({ message: `Post with id: ${postId} deleted along with ${deletedComments.deletedCount} comment(s).` });
     }
     catch(error){
         next(error)

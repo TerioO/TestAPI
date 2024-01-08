@@ -12,8 +12,10 @@ const config: Config = {
     testMatch: ["**/tests/**/*.test.ts"], 
 
     // Indicates whether each individual test should be reported during the run. All errors will also still be shown on the bottom after execution.
-    verbose: true
-
+    verbose: true,
+    
+    // globalSetup: "./src/tests/globalSetup.ts",
+    globalTeardown: "./src/tests/globalTeardown.ts"
 }
 
 export default config;

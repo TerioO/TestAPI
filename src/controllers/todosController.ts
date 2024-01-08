@@ -44,7 +44,7 @@ export const getTodo: RequestHandler = async (req, res, next) => {
         if(!mongoose.isValidObjectId(todoId)) throw createHttpError(400, "Invalid user id.");
         const foundTodo = await Todo.findById(todoId).lean().exec();
         if(!foundTodo) throw createHttpError(404, "No user found.");
-        res.status(200).json({ user: foundTodo });
+        res.status(200).json({ todo: foundTodo });
     }
     catch(error){
         next(error)
@@ -56,7 +56,7 @@ export const createTodo: RequestHandler<unknown, unknown, TodoInterface, unknown
     try {
         if(!userId || !title || !body || !deadline) throw createHttpError(400, "Missing fields: userId, title, body, deadline")
         if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid userId")
-        if(deadline && Date.parse(deadline.toString())) throw createHttpError(400, "Invalid date string")
+        if(deadline && !Date.parse(deadline.toString())) throw createHttpError(400, "Invalid date string")
         const foundUser = await User.findById(userId).lean().exec();
         if(!foundUser) throw createHttpError(404, "User not found.");
         const todo = await Todo.create({ userId, title, body, deadline, completed });
@@ -72,7 +72,7 @@ export const updateTodo: RequestHandler<{ todoId: string }, unknown, Partial<Tod
     const { todoId } = req.params;
     try {
         if(!title && !body && !deadline && !completed) throw createHttpError(400, "Missing one of: title, body, deadline, completed")
-        if(deadline && Date.parse(deadline.toString())) throw createHttpError(400, "Invalid date string")
+        if(deadline && !Date.parse(deadline.toString())) throw createHttpError(400, "Invalid date string")
         const todo = await Todo.findById(todoId).exec();
         if(!todo) throw createHttpError(404, "Todo not found.");
         if(title) todo.title = title;

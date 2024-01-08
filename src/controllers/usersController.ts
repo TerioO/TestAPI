@@ -5,6 +5,7 @@ import Comment from "../models/Comment";
 import Todo from "../models/Todo";
 import mongoose from "mongoose";
 import { RequestHandler } from "express"
+import env from "../config/validateEnv";
 
 interface PaginationQuery {
     page: string,
@@ -13,9 +14,9 @@ interface PaginationQuery {
     select: string
 }
 export const getUsers: RequestHandler<unknown, unknown, unknown, PaginationQuery> = async (req, res, next) => {
-    let limit = parseInt(req.query.limit) > 0 ? parseInt(req.query.limit) : 20;
+    let limit = parseInt(req.query.limit) > 0 ? parseInt(req.query.limit) : env.GET_LIMIT;
     let page;
-    if(!req.query.page){
+    if (!req.query.page) {
         page = 1;
         limit = 0;
     }
@@ -25,96 +26,96 @@ export const getUsers: RequestHandler<unknown, unknown, unknown, PaginationQuery
     const select = req.query.select ? req.query.select : {};
     const sort = req.query.sort ? req.query.sort : undefined;
     try {
-        const users = await User.find({ })
-            .skip((page-1)*limit)
+        const users = await User.find({})
+            .skip((page - 1) * limit)
             .limit(limit)
             .sort(sort)
             .select(select)
             .lean()
             .exec();
-        if(users.length === 0) throw createHttpError(404, "No users found.");
+        if (users.length === 0) throw createHttpError(404, "No users found.");
         res.status(200).json({ users });
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
-} 
+}
 
 export const getUser: RequestHandler = async (req, res, next) => {
     const { userId } = req.params;
     try {
-        if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
+        if (!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
         const foundUser = await User.findById(userId).lean().exec();
-        if(!foundUser) throw createHttpError(404, "No user found.");
+        if (!foundUser) throw createHttpError(404, "No user found.");
         res.status(200).json({ user: foundUser });
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
-} 
+}
 
 export const createUser: RequestHandler<unknown, unknown, UserInterface, unknown> = async (req, res, next) => {
     const { username, birthday, createdAt, updatedAt } = req.body;
     const dates = { birthday, createdAt, updatedAt };
     try {
-        if(!username) throw createHttpError(400, "Missing field: username");
+        if (!username) throw createHttpError(400, "Missing field: username");
         Object.entries(dates).forEach(([key, value]) => {
-            if(value && !Date.parse(value?.toString())) throw createHttpError(400, `Invalid date string: ${key}`);
+            if (value && !Date.parse(value?.toString())) throw createHttpError(400, `Invalid date string: ${key}`);
         })
         const duplicate = await User.findOne({ username }).lean().exec();
-        if(duplicate) throw createHttpError(400, "Username already taken.");
+        if (duplicate) throw createHttpError(400, "Username already taken.");
         const newUser = await User.create({ username, birthday, createdAt, updatedAt });
         res.status(201).json({ user: newUser });
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
-} 
+}
 
 interface UpdateBody {
     username?: string,
     birthday?: Date
 }
-interface UpdateParams { 
-    userId: string 
+interface UpdateParams {
+    userId: string
 }
 export const updateUser: RequestHandler<UpdateParams, unknown, UpdateBody, unknown> = async (req, res, next) => {
     const { username, birthday } = req.body;
     const { userId } = req.params;
     try {
-        if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
-        if(!username && !birthday) throw createHttpError(400, "Missing field: username or birthday");
-        if(birthday && Date.parse(birthday.toString())) throw createHttpError(400, "Invalid date string: birthday");
+        if (!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
+        if (!username && !birthday) throw createHttpError(400, "Missing field: username or birthday");
+        if (birthday && Date.parse(birthday.toString())) throw createHttpError(400, "Invalid date string: birthday");
         const user = await User.findById(userId).exec();
-        if(!user) throw createHttpError(404, "User not found.");
-        if(birthday) user.birthday = birthday;
-        if(username) {
+        if (!user) throw createHttpError(404, "User not found.");
+        if (birthday) user.birthday = birthday;
+        if (username) {
             const duplicate = await User.findOne({ username }).lean().exec();
-            if(duplicate) throw createHttpError(400, "Username already taken.")
+            if (duplicate) throw createHttpError(400, "Username already taken.")
             user.username = username;
         }
         user.updatedAt = new Date();
         const updatedUser = await user.save();
         res.status(200).json({ user: updatedUser });
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
-} 
+}
 
 
 export const deleteUser: RequestHandler = async (req, res, next) => {
     const { userId } = req.params;
     try {
-        if(!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
+        if (!mongoose.isValidObjectId(userId)) throw createHttpError(400, "Invalid user id.");
         const result = await User.deleteOne({ _id: userId });
-        if(result.deletedCount === 0) throw createHttpError(404, "User not found.");
-        await Post.deleteMany({ userId });
-        await Todo.deleteMany({ userId });
-        await Comment.deleteMany({ "user.userId": userId });
-        res.status(200).json({ message: "User deleted along with every user data." });
+        if (result.deletedCount === 0) throw createHttpError(404, "User not found.");
+        const delPosts = await Post.deleteMany({ userId });
+        const delTodos = await Todo.deleteMany({ userId });
+        const delComments = await Comment.deleteMany({ userId });
+        res.status(200).json({ message: ` User deleted along with user data. User had: ${delPosts.deletedCount} post(s) ${delComments.deletedCount} comment(s) ${delTodos.deletedCount} todo(s) ` });
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
 } 
