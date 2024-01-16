@@ -43,7 +43,7 @@ export const getTodo: RequestHandler = async (req, res, next) => {
     try {
         if(!mongoose.isValidObjectId(todoId)) throw createHttpError(400, "Invalid user id.");
         const foundTodo = await Todo.findById(todoId).lean().exec();
-        if(!foundTodo) throw createHttpError(404, "No user found.");
+        if(!foundTodo) throw createHttpError(404, "No todo found.");
         res.status(200).json({ todo: foundTodo });
     }
     catch(error){

@@ -19,6 +19,7 @@ npm i
 PORT=portNumber (default = 3500)
 MONGO_URI=mongodb://127.0.0.1:27017
 MONGO_DBNAME=TestAPI (default = TestAPI)
+GET_LIMIT=20 (default = 20)
 ```
 - Start the server on localhost
 ```bash
@@ -40,6 +41,7 @@ The database will contain 4 collections:
 
 ## Todo
 
-1. [ ]  Add documentation.
-2. [ ]  Deploy a showcase webpage.
-3. [ ]  More collections?
+1. [x]  Add documentation.
+2. [x]  Deploy a showcase webpage.
+3. [x]  Write some tests.
+4. [ ]  More collections?
